@@ -60,19 +60,20 @@ pub fn start(name: []const u8) !os.socket_t {
     }
 
     // 4. connect fd with socket address (fix)
+    const len = @sizeOf(sys.sockaddr_ctl);
     const addr: sys.sockaddr_ctl = sys.sockaddr_ctl{
         .sc_id = ctlInfo.ctl_id,
-        .sc_len = @sizeOf(sys.sockaddr_ctl),
+        .sc_len = len,
         .sc_family = sys.AF_SYSTEM,
         .ss_sysaddr = AF_SYS_CONTROL,
         .sc_unit = tunId,
         .sc_reserved = [_]u32{0} ** 5,
     };
-    
-    const cp = @ptrCast([*c]const sys.sockaddr, &addr);
-    const connRes = sys.connect(fd, cp, @sizeOf(sys.sockaddr));
+
+    const sockaddrPointer = @ptrCast(*const sys.sockaddr, &addr);
+    const connRes = sys.connect(fd, sockaddrPointer, len);
     if (connRes < 0) {
-        std.debug.print("connect failed\n", .{});
+        std.debug.print("connect failed : {}\n", .{connRes});
     } else {
         std.debug.print("connect succeed\n", .{});
     }
