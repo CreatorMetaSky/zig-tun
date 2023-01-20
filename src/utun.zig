@@ -1,73 +1,80 @@
 const std = @import("std");
-
-
-// @cInclude("sys/types.h>");
-// @cInclude("sys/socket.h>");
-// @cInclude("sys/un.h>");
-// @cInclude("stdio.h>");
-
-const socket = @cImport({
-    @cInclude("sys/types.h>");
-    @cInclude("sys/socket.h>");
-    // @cInclude("sys/ioctl.h>");
-    // @cInclude("net/if_utun.h>");
-});
-
-const unistd = @cImport({
-  @cInclude("unistd.h>");
-});
-const stdio = @cImport({
-  @cInclude("stdio.h");
-});
-
 const net = std.net;
 const os = std.os;
+
+const sys = @cImport({
+    @cInclude("sys/socket.h");
+    @cInclude("sys/kern_control.h");
+    @cInclude("sys/ioctl.h");
+});
+
+// const impl = switch (builtin.target.os.tag) {
+//     .linux => @import("./linux.zig"),
+//     .macos => @import("./apple.zig"),
+//     else => @compileError("OS not supported"),
+// };
+
+const SYSPROTO_CONTROL: u32 = 2; // todo: - change this to os.proto.syscontrol
+const AF_SYS_CONTROL: u32 = 2; // todo: - change this to os.proto.syscontrol
+
+const UTUN_CONTROL_NAME = "com.apple.net.utun_control";
+
+const CTLIOCGINFO = (0x40000000 | 0x80000000) | ((100 & 0x1fff) << 16) | @intCast(u32, 'N')<<8 | 3;
 
 pub const Stream = struct {
     handle: os.socket_t
 };
 
 pub fn start(name: []const u8) !os.socket_t {
-    _ = name;
-    // socket.socket(socket.PF_SYSTEM, c_int, c_int);
-    
-    
+    // 1. utun name to tun id (ok)
+    const utunPrefix = "utun";
+    if (!std.mem.startsWith(u8, name, utunPrefix)) {
+        std.debug.print("the name must has prefix utun\n", .{});
+        return -1;
+    }
+    std.debug.print("the name = {s}\n", .{name});
 
-    // 1. create fd
-    const sockfd = try os.socket(os.AF.SYSTEM, std.os.SOCK.DGRAM | std.os.SOCK.CLOEXEC, 0);
-    std.debug.print("socket fd = {}\n", .{sockfd});
-    errdefer os.closeSocket(sockfd);
+    const idStr = name[4..];
+    std.debug.print("the id str = {s}\n", .{idStr});
+    const tunId: u32 = try std.fmt.parseInt(u32, idStr, 10); // todo: - read int from string
+    std.debug.print("the tun id is : {d}\n", .{tunId});
 
-    // 2. ctl_info
-    // var ifr: os.ifreq = undefined;
-    // std.mem.copy(u8, &ifr.ifrn.name, name);
-    // ifr.ifrn.name[name.len] = 0;
-    // try os.ioctl_SIOCGIFINDEX(sockfd, &ifr);
+    // 2. use socket create fd (ok)
+    const fd = sys.socket(sys.AF_SYSTEM, sys.SOCK_DGRAM, SYSPROTO_CONTROL);
+    std.debug.print("socket fd = {}\n", .{fd});
+    errdefer os.closeSocket(fd);
 
-    // const index = @bitCast(u32, ifr.ifru.ivalue);
-    // std.debug.print("if name to index = {}", .{index});
-
-    // 3. create sc
-    // struct sockaddr_ctl sc;
-    // sc.sc_id = ctlInfo.ctl_id;
-	// sc.sc_len = sizeof(sc);
-	// sc.sc_family = AF_SYSTEM;
-	// sc.ss_sysaddr = AF_SYS_CONTROL;
-	// sc.sc_unit = 2;	/* Only have one, in this example... */
-
-    var sockaddr = os.sockaddr.in{
-        .family = os.AF.SYSTEM,
-        .port = 65535,
-        .addr = 0,
-        .zero = [1]u8{0} ** 8,
+    // 3. call ioctl init ctl_info get ctl_id (ok)
+    var array = [_]u8{0} ** 96;
+    std.mem.copy(u8, &array, UTUN_CONTROL_NAME); // todo: - slice to array
+    std.debug.print("the array = {s}\n", .{array});
+    var ctlInfo: sys.ctl_info = .{
+        .ctl_id = @as(u32, 0),
+        .ctl_name = array,
     };
+    const ioCtlRes = sys.ioctl(fd, CTLIOCGINFO, @ptrToInt(&ctlInfo));
+    if (ioCtlRes < 0) {
+        std.debug.print("call iotcl failed \n res = {} \n the ctl info = {}\n", .{ioCtlRes, @sizeOf(sys.ctl_info)});
+    } else {
+        std.debug.print("call ioctl succced, res = {}\n and info: {}\n", .{ioCtlRes, ctlInfo});
+    }
 
-    const sc = @ptrCast(*os.sockaddr, &sockaddr);
-
-    const len = @sizeOf(os.sockaddr.in);
-
-    // 3. connect fd with socket address
-    try os.connect(sockfd, sc, len);
-
-    return sockfd;
+    // 4. connect fd with socket address (fix)
+    const addr: sys.sockaddr_ctl = sys.sockaddr_ctl{
+        .sc_id = ctlInfo.ctl_id,
+        .sc_len = @sizeOf(sys.sockaddr_ctl),
+        .sc_family = sys.AF_SYSTEM,
+        .ss_sysaddr = AF_SYS_CONTROL,
+        .sc_unit = tunId,
+        .sc_reserved = [_]u32{0} ** 5,
+    };
+    
+    const cp = @ptrCast([*c]const sys.sockaddr, &addr);
+    const connRes = sys.connect(fd, cp, @sizeOf(sys.sockaddr));
+    if (connRes < 0) {
+        std.debug.print("connect failed\n", .{});
+    } else {
+        std.debug.print("connect succeed\n", .{});
+    }
+    return fd;
 }
