@@ -1,27 +1,38 @@
 # Tasks
 
-## basic setup
+## 0.0.1
 
-- [x] 工程创建和文件构造
-- [x] 框架和结构搭建
-- [x] 编译通过
+create utun device, can read packet from it (only macOS)
 
-## use native c api create utun
+### basic setup
 
-- [x] zig call system c api 写完
-- [x] 运行起来 - netstat 能看到
+- [x] project setup
+- [x] complie succeed
 
-## test read packet from tun device
+### use native api to create utun
 
+- [x] write code zig call system c api
+- [x] complie and run succeed
+- [x] netstat -rn can see the utun device
+
+### device with config
+
+- [ ] device configuration
 - [ ] create device with config
-- [ ] 自动创建路由表
-- [ ] 测试代码 packet send to tun device
+- [ ] inconfig up the device
 
-## api change
+### test read packet from tun device
 
-- [ ] abstract use stream interface
+- [ ] auto config route table from config
+- [ ] read packet send to tun device
 
-## adapte other platform
+## 0.0.2
+
+### api change to zig style
+
+- [ ] like StreamServer interface
+
+### adapte other platform
 
 - [ ] cross platform
 - [ ] async await
