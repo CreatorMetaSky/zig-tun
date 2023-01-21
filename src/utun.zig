@@ -66,7 +66,7 @@ pub fn start(name: []const u8) !os.socket_t {
         .sc_len = len,
         .sc_family = sys.AF_SYSTEM,
         .ss_sysaddr = AF_SYS_CONTROL,
-        .sc_unit = tunId,
+        .sc_unit = tunId + 1,
         .sc_reserved = [_]u32{0} ** 5,
     };
 

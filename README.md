@@ -1,20 +1,17 @@
 # zig-tun
 
-tun device using zig.
+A simple tun/tap network interface written in zig.
 
-# daily task
+# How to use
 
-## 2022.01.17
+**on macOS**
 
-- [x] 工程创建和文件构造
-- [x] 框架和结构搭建
-- [x] 编译通过
+```
+sudo zig build run
+sudo ifconfig utun8 10.1.0.10 10.1.0.20 up
+```
 
-- [ ] zig call system c api 写完
-- [ ] 运行起来 - netstat 能看到
-- [ ] 创建路由表
-- [ ] 测试代码 packet send to tun device
-
-- [ ] cross platform
-- [ ] async await
-- [ ] abstract use stream interface
+- https://gist.github.com/cute/dbac4005d2f40e151fa42fac1d2d00e2
+- https://github.com/songgao/water
+- https://github.com/meh/rust-tun
+- github.com/FlowerWrong/ip2socks
