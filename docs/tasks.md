@@ -17,9 +17,9 @@ create utun device, can read packet from it (only macOS)
 
 ### device with config
 
-- [ ] device configuration
-- [ ] create device with config
-- [ ] inconfig up the device
+- [x] create Server with Options
+- [x] handle the error logic in tun start
+- [ ] ifconfig up the device
 
 ### test read packet from tun device
 

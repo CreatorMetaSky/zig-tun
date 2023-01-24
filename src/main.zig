@@ -1,12 +1,19 @@
 const std = @import("std");
-const utun = @import("./utun.zig");
+const net = std.net;
+
+const tun = @import("tun.zig");
 
 pub fn main() !void {
-    const fd = try utun.start("utun8");
-    std.debug.print("return fd = {}\n", .{fd});
+    const options = tun.Options{.name = "utun8"};
+    const deviceServer = try tun.DeviceServer.init(options);
+    std.debug.print("the utun name = {s} and fd = {?}", .{deviceServer.name, deviceServer.sockfd.?});
+
+    deviceServer.up();
 
     // todo : read bytes from device
     while(true) {
         std.debug.print("", .{});
     }
 }
+
+// 11:50 continue
