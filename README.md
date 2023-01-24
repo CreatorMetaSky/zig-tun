@@ -11,9 +11,11 @@ sudo zig build run
 sudo ifconfig utun8 10.1.0.10 10.1.0.20 up
 ```
 
-- todo:
-- fixme:
-- note:
+## Tips
+
+- todo: - the task will do it
+- fixme: - small bugfix 
+- note: - tech knowledge to learn
 
 ## Inspiration
 
