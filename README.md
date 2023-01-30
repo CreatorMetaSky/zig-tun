@@ -9,6 +9,7 @@ A portable tun/tap network interface written in zig.
 ```
 sudo zig build run
 sudo ifconfig utun8 10.1.0.10 10.1.0.20 up
+ping 10.1.0.20
 ```
 
 ## Tips
