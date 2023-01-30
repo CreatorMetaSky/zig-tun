@@ -28,14 +28,14 @@ pub const Options = struct {
 
 pub const DeviceServer = struct {
     name: []const u8,
-    sockfd: ?fd_t = null,
-
+    sockfd: os.socket_t,
+    
     pub fn init(options: Options) !DeviceServer {
-        var deviceServer = DeviceServer{
-            .name = options.name
+        const fd = try startTunDevice(options.name);
+        return DeviceServer{
+            .name = options.name,
+            .sockfd = fd,
         };
-        deviceServer.sockfd = try startTunDevice(deviceServer.name);
-        return deviceServer;
     }
 
     pub fn startTunDevice(name: []const u8) DeviceServerError!fd_t {
